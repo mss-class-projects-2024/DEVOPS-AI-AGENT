@@ -5,9 +5,9 @@ def analyze_cicd(repo_path):
 
     findings = []
 
-    pipeline_tools = []
+    pipeline_tools = ["GitHub Actions"]
 
-    workflow_files = []
+    workflow_files = [".github/workflows/deploy.yaml"]
 
     # Jenkins
 

@@ -6,6 +6,7 @@ from analyzers.dependency_detector import detect_dependencies
 from analyzers.environment_validator import validate_environment
 from analyzers.project_structure import analyze_structure
 from analyzers.service_detector import detect_services
+from analyzers.database_detector import detect_databases
 from analyzers.dependency_scanner import detect_project_dependencies
 from analyzers.k8s_analyzer import analyze_k8s
 from analyzers.docker_analyzer import analyze_docker
@@ -16,6 +17,7 @@ from generators.setup_guide_generator import generate_setup_guide
 from generators.troubleshooting_guide_generator import generate_troubleshooting_guide
 from generators.interview_question_generator import generate_interview_questions
 from analyzers.cicd_analyzer import analyze_cicd
+from analyzers.recommendation_engine import generate_recommendations
 from ai.repository_explainer import explain_repository
 from ai.deployment_explainer import explain_deployment
 from analyzers.documentation_analyzer import analyze_documentation
@@ -25,7 +27,7 @@ import os
 import traceback
 
 def main():
-
+    # Get repository input from user
     repo_input = input(
         "Enter local path or Git URL: "
     ).strip()
@@ -38,7 +40,7 @@ def main():
     repo_path = None
 
     try:
-
+        # git clone if URL, otherwise use local path
         if is_git_repo:
 
             repo_path = clone_repository(
@@ -85,6 +87,7 @@ def main():
             )
         )
 
+        # Services Detection
         services = (
             detect_services(
                 repo_path
@@ -92,6 +95,20 @@ def main():
             or []
         )
 
+        # Database Detection
+        database_result = detect_databases(
+            repo_path
+        )
+
+        databases = database_result.get(
+            "databases",
+            []
+        )
+
+        database_findings = database_result.get(
+            "findings",
+            []
+        )
         # Dependency Analysis
 
         project_dependencies = (
@@ -145,6 +162,18 @@ def main():
             pipeline_tools = []
             workflow_files = []
 
+        # Recommendation Generation
+        recommendations = generate_recommendations(
+            technologies=technologies,
+            dependencies=dependencies,
+            documentation=documentation,
+            k8s_findings=k8s_findings,
+            docker_findings=docker_findings,
+            terraform_findings=terraform_findings,
+            pipeline_tools=pipeline_tools,
+            workflow_files=workflow_files,
+        )
+
         # Architecture Generation
         architecture = (
             generate_architecture(
@@ -190,9 +219,16 @@ def main():
             project_structure,
             services,
             dependencies,
+            databases,
+            database_findings,
+            project_dependencies,
+            documentation,
             k8s_findings,
             docker_findings,
-            terraform_findings
+            terraform_findings,
+            pipeline_tools,
+            workflow_files,
+            recommendations
         )
 
         # Repository Explanation
@@ -351,6 +387,40 @@ def main():
 
             print(
                 "No services detected"
+            )
+
+        # Database Detection Results
+        print("\nDatabases Detected:")
+        print("=" * 60)
+
+        if databases:
+
+            for db in databases:
+
+                print(
+                    f"- {db}"
+                )
+
+        else:
+
+            print(
+                "No databases detected"
+            )
+        # Database Findings Results
+        print("\nDatabase Findings:")
+
+        if database_findings:
+
+            for finding in database_findings:
+
+                print(
+                    f"- {finding}"
+                )
+
+        else:
+
+            print(
+                "No database findings"
             )
 
         print("\nInfrastructure Components:")
@@ -525,6 +595,13 @@ def main():
             print(
                 "No CI/CD pipeline detected"
             )
+
+        # Print Recommendations
+        print("\nRecommendations:")
+        print("=" * 60)
+
+        for rec in recommendations:
+            print(f"- {rec}")
 
         # Print Architecture
         print("\nArchitecture Flow:")
