@@ -21,6 +21,9 @@ from ai.deployment_explainer import explain_deployment
 from analyzers.documentation_analyzer import analyze_documentation
 
 
+import os
+import traceback
+
 def main():
 
     repo_input = input(
@@ -37,16 +40,35 @@ def main():
     try:
 
         if is_git_repo:
-            repo_path = clone_repository(repo_input)
+
+            repo_path = clone_repository(
+                repo_input
+            )
+
         else:
+
+            if not os.path.exists(
+                repo_input
+            ):
+
+                raise Exception(
+                    f"Path does not exist: {repo_input}"
+                )
+
             repo_path = repo_input
 
         files = scan_repository(repo_path)
 
-        technologies = detect_technologies(files)
+        technologies = (
+            detect_technologies(files)
+            or set()
+        )
 
-        dependencies = detect_dependencies(
-            technologies
+        dependencies = (
+            detect_dependencies(
+                technologies
+            )
+            or []
         )
 
         environment_status = (
@@ -55,11 +77,7 @@ def main():
             )
         )
 
-        project_type = (
-            classify_project(
-                technologies
-            )
-        )
+        project_type = classify_project(technologies)
 
         project_structure = (
             analyze_structure(
@@ -67,8 +85,11 @@ def main():
             )
         )
 
-        services = detect_services(
-            repo_path
+        services = (
+            detect_services(
+                repo_path
+            )
+            or []
         )
 
         # Dependency Analysis
@@ -83,31 +104,46 @@ def main():
             analyze_documentation(
                 repo_path
             )
+            or []
         )
 
-        k8s_findings = analyze_k8s(
-            repo_path
+        # Kubernetes Analysis
+        k8s_findings = (
+            analyze_k8s(
+                repo_path
+            )
+            or []
         )
 
+        # Docker Analysis
         docker_findings = (
             analyze_docker(
                 repo_path
             )
+            or []
         )
 
         # Terraform Analysis
-        terraform_findings, terraform_components = (
-            analyze_terraform(
-                repo_path
-            )
+        terraform_result = analyze_terraform(
+            repo_path
         )
 
+        if terraform_result:
+            terraform_findings, terraform_components = terraform_result
+        else:
+            terraform_findings = []
+            terraform_components = []
+
         # CI/CD Analysis
-        pipeline_tools, workflow_files = (
-            analyze_cicd(
-                repo_path
-            )
+        cicd_result = analyze_cicd(
+            repo_path
         )
+
+        if cicd_result:
+            pipeline_tools, workflow_files = cicd_result
+        else:
+            pipeline_tools = []
+            workflow_files = []
 
         # Architecture Generation
         architecture = (
@@ -160,6 +196,16 @@ def main():
         )
 
         # Repository Explanation
+        if not report_file:
+            raise Exception(
+                "Report generator returned no file path"
+            )
+
+        if not os.path.exists(report_file):
+            raise Exception(
+                f"Report file not found: {report_file}"
+            )
+
         with open(
             report_file,
             "r",
@@ -170,31 +216,53 @@ def main():
 
         documentation_text = ""
 
+        # Combine documentation content for LLM analysis
+        MAX_DOC_CHARS = 3000
+
+        documentation_text = ""
+
         for doc in documentation:
 
+            file_name = doc.get(
+                "file",
+                "Unknown File"
+            )
+
+            content = doc.get(
+                "content"
+            ) or ""
+
             documentation_text += (
-                f"\n\nFILE: {doc['file']}\n"
+                f"\n\nFILE: {file_name}\n"
             )
 
             documentation_text += (
-                doc['content']
+                content[:MAX_DOC_CHARS]
             )
+
+        MAX_AI_INPUT = 15000
+
+        combined_input = (
+            report_text
+            + "\n\nDocumentation:\n"
+            + documentation_text
+        )
+
+        combined_input = (
+            combined_input[:MAX_AI_INPUT]
+        )
 
         # Explain Repository using LLM
         ai_summary = (
             explain_repository(
-                report_text
-                + "\n\nDocumentation:\n"
-                + documentation_text
+                combined_input
             )
         )
 
         # Deployment Explainer
         deployment_explanation = (
             explain_deployment(
-                report_text
-                + "\n\nDocumentation:\n"
-                + documentation_text
+                combined_input
             )
         )
 
@@ -261,13 +329,14 @@ def main():
             "\nProject Structure:"
         )
 
+        # Print Detected Services
         if project_structure:
             for directory in project_structure:
                 print(
                     f"- {directory}"
                 )
 
-                print("\nDetected Services:")
+        print("\nDetected Services:")
 
         # Print Detected Services
         if services:
@@ -351,7 +420,6 @@ def main():
             )
 
         # Print Documentation Files
-
         print("\nDocumentation Files:")
         print("=" * 60)
 
@@ -359,13 +427,17 @@ def main():
 
             for doc in documentation:
 
-                print(
-                    f"\n{doc['file']}"
+                file_name = doc.get(
+                    "file",
+                    "Unknown File"
                 )
 
-                print(
-                    doc['content'][:300]
-                )
+                content = doc.get(
+                    "content"
+                ) or ""
+
+                print(f"\n{file_name}")
+                print(content[:300])
 
         else:
 
@@ -495,11 +567,14 @@ def main():
             f"\nError: {e}"
         )
 
+        traceback.print_exc()
+        
     finally:
 
         if (
             is_git_repo
             and repo_path
+            and os.path.exists(repo_path)
         ):
             cleanup_repository(
                 repo_path
