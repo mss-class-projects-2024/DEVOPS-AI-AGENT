@@ -189,29 +189,14 @@ def main():
             )
         )
 
-        # Analyze Project Dependencies
-        project_dependencies = (
-            detect_project_dependencies(
-                repo_path
-            )
-        )
-
-        # Analyze Project Documentation
-        documentation = (
-            analyze_documentation(
-                repo_path
-            )
-        )
-
-        # Deployment Explanation
+        # Deployment Explainer
         deployment_explanation = (
             explain_deployment(
                 report_text
+                + "\n\nDocumentation:\n"
+                + documentation_text
             )
         )
-
-        # Cleanup Repository
-        cleanup_repository(repo_path)
 
         # Print Project Analysis    
         print("\nPROJECT ANALYSIS")
@@ -282,15 +267,30 @@ def main():
                     f"- {directory}"
                 )
 
-        if terraform_components:
+                print("\nDetected Services:")
+
+        # Print Detected Services
+        if services:
+
+            for service in services:
+
+                print(
+                    f"- {service}"
+                )
+
+        else:
 
             print(
-                "\nInfrastructure Components:"
+                "No services detected"
             )
 
-            for component in (
-                terraform_components
-            ):
+        print("\nInfrastructure Components:")
+
+        # Print Terraform Components
+        if terraform_components:
+
+            for component in terraform_components:
+
                 print(
                     f"- {component}"
                 )
@@ -298,18 +298,8 @@ def main():
         else:
 
             print(
-                "\nDetected Services:"
+                "No infrastructure detected"
             )
-
-            if services:
-                for service in services:
-                    print(
-                        f"- {service}"
-                    )
-            else:
-                print(
-                    "No services detected"
-                )
 
         # Print Project Dependencies
         print(
@@ -358,6 +348,29 @@ def main():
 
             print(
                 "No package dependencies found"
+            )
+
+        # Print Documentation Files
+
+        print("\nDocumentation Files:")
+        print("=" * 60)
+
+        if documentation:
+
+            for doc in documentation:
+
+                print(
+                    f"\n{doc['file']}"
+                )
+
+                print(
+                    doc['content'][:300]
+                )
+
+        else:
+
+            print(
+                "No documentation content found"
             )
 
         # Print Kubernetes Findings
