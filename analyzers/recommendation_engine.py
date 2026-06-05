@@ -29,20 +29,37 @@ def generate_recommendations(
     # -------------------------------------------------
     # Documentation Recommendations
     # -------------------------------------------------
-
     if not documentation:
+
         recommendations.append(
             "Add project documentation (README.md) explaining setup, usage, and deployment."
         )
 
-    docs_lower = [doc.lower() for doc in documentation]
+    docs_lower = []
 
-    if not any("readme" in doc for doc in docs_lower):
+    for doc in documentation:
+
+        if isinstance(doc, dict):
+
+            docs_lower.append(
+                doc.get(
+                    "file",
+                    ""
+                ).lower()
+            )
+
+    if not any(
+        "readme" in doc
+        for doc in docs_lower
+    ):
         recommendations.append(
             "Create a README.md file with installation and usage instructions."
         )
 
-    if not any("contributing" in doc for doc in docs_lower):
+    if not any(
+        "contributing" in doc
+        for doc in docs_lower
+    ):
         recommendations.append(
             "Consider adding CONTRIBUTING.md for collaboration guidelines."
         )

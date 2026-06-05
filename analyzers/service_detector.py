@@ -1,47 +1,64 @@
-from pathlib import Path
+import os
+
+
+IGNORE_DIRS = {
+    ".git",
+    "node_modules",
+    "venv",
+    "__pycache__",
+    "dist",
+    "build",
+    "coverage",
+    ".terraform",
+    ".idea",
+    ".vscode"
+}
+
+
+SERVICE_KEYWORDS = [
+    "service",
+    "api",
+    "backend",
+    "frontend",
+    "gateway"
+]
+
 
 def detect_services(repo_path):
 
-    services = []
+    services = set()
 
-    for item in Path(repo_path).rglob("*"):
+    for root, dirs, files in os.walk(repo_path):
 
-        if item.is_dir():
+        # Ignore unwanted directories
+        dirs[:] = [
+            d for d in dirs
+            if d not in IGNORE_DIRS
+        ]
 
-            has_dockerfile = (
-                item / "Dockerfile"
-            ).exists()
+        folder_name = os.path.basename(root).lower()
 
-            has_package_json = (
-                item / "package.json"
-            ).exists()
+        # Detect service folders
+        for keyword in SERVICE_KEYWORDS:
 
-            if has_dockerfile or has_package_json:
-                services.append(item.name)
+            if keyword in folder_name:
 
-    return sorted(set(services))
+                services.add(
+                    os.path.basename(root)
+                )
 
-# def detect_services(repo_path):
+                break
 
-#     services = []
+        # Detect Dockerized services
+        if "Dockerfile" in files:
 
-#     service_keywords = [
-#         "auth-service",
-#         "post-service",
-#         "comment-service",
-#         "frontend"
-#     ]
+            parent = os.path.basename(root)
 
-#     for item in Path(repo_path).rglob("*"):
+            if parent.lower() not in {
+                "docker",
+                "containers"
+            }:
 
-#         if item.is_dir():
+                services.add(parent)
 
-#             directory_name = item.name.lower()
-
-#             if directory_name == "services":
-#                 continue
-
-#             if directory_name in service_keywords:
-#                 services.append(item.name)
-
-#     return sorted(set(services))
+    return sorted(list(services))

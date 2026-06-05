@@ -1,0 +1,11 @@
+./chat_agent.py
+./deployment_explainer.py
+./files.txt
+./fix_recommender.py
+./ollama_client.py
+./project-tree.txt
+./repository_chat.py
+./repository_explainer.py
+./__pycache__/deployment_explainer.cpython-313.pyc
+./__pycache__/ollama_client.cpython-313.pyc
+./__pycache__/repository_explainer.cpython-313.pyc

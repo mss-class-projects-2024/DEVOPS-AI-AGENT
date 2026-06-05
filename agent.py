@@ -25,6 +25,7 @@ from analyzers.documentation_analyzer import analyze_documentation
 
 import os
 import traceback
+from pathlib import Path
 
 def main():
     # Get repository input from user
@@ -439,49 +440,84 @@ def main():
             print(
                 "No infrastructure detected"
             )
+            
+        # Create dependency report file
 
-        # Print Project Dependencies
-        print(
-            "\nProject Dependencies:"
+        reports_dir = Path("reports")
+        reports_dir.mkdir(exist_ok=True)
+
+        dependency_report = (
+            reports_dir / "dependencies_report.txt"
         )
+
+        with open(
+            dependency_report,
+            "w",
+            encoding="utf-8"
+        ) as dep_file:
+
+            dep_file.write(
+                "PROJECT DEPENDENCIES REPORT\n"
+            )
+
+            dep_file.write(
+                "=" * 50 + "\n\n"
+            )
+
+            if project_dependencies:
+
+                for file, deps in (
+                    project_dependencies.items()
+                ):
+
+                    dep_file.write(
+                        f"\n{file}\n"
+                    )
+
+                    dep_file.write(
+                        "-" * 40 + "\n"
+                    )
+
+                    if deps.get("dependencies"):
+
+                        dep_file.write(
+                            "\nDependencies:\n"
+                        )
+
+                        for dep in deps["dependencies"]:
+
+                            dep_file.write(
+                                f"- {dep}\n"
+                            )
+
+                    if deps.get("devDependencies"):
+
+                        dep_file.write(
+                            "\nDev Dependencies:\n"
+                        )
+
+                        for dep in deps["devDependencies"]:
+
+                            dep_file.write(
+                                f"- {dep}\n"
+                            )
+
+        print("\nProject Dependencies:")
+        print("=" * 60)
 
         if project_dependencies:
 
-            for file, deps in (
-                project_dependencies.items()
-            ):
+            for file, deps in project_dependencies.items():
 
                 print(f"\n{file}")
 
-                if deps.get(
-                    "dependencies"
-                ):
+                print(
+                    f"Dependencies: {len(deps.get('dependencies', []))}"
+                )
 
-                    print(
-                        "Dependencies:"
-                    )
-
-                    for dep in deps[
-                        "dependencies"
-                    ]:
-                        print(
-                            f"  - {dep}"
-                        )
-
-                if deps.get(
-                    "devDependencies"
-                ):
-
-                    print(
-                        "Dev Dependencies:"
-                    )
-
-                    for dep in deps[
-                        "devDependencies"
-                    ]:
-                        print(
-                            f"  - {dep}"
-                        )
+                print(
+                    f"Dev Dependencies: {len(deps.get('devDependencies', []))}"
+                )
 
         else:
 
@@ -489,6 +525,10 @@ def main():
                 "No package dependencies found"
             )
 
+        print(
+            f"\nFull dependency report saved: "
+            f"{dependency_report}"
+        )
         # Print Documentation Files
         print("\nDocumentation Files:")
         print("=" * 60)
