@@ -2,11 +2,29 @@ import json
 from pathlib import Path
 
 
+IGNORE_DIRS = {
+    "node_modules",
+    ".git",
+    "venv",
+    "__pycache__",
+    "dist",
+    "build",
+    ".terraform"
+}
+
+
 def detect_project_dependencies(repo_path):
 
     dependencies = {}
 
     for package_file in Path(repo_path).rglob("package.json"):
+
+        # Skip node_modules and other ignored directories
+        if any(
+            part in IGNORE_DIRS
+            for part in package_file.parts
+        ):
+            continue
 
         try:
 

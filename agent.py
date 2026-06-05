@@ -537,22 +537,19 @@ def main():
 
             for doc in documentation:
 
-                file_name = doc.get(
-                    "file",
-                    "Unknown File"
+                print(
+                    f"- {doc['file']}"
                 )
 
-                content = doc.get(
-                    "content"
-                ) or ""
-
-                print(f"\n{file_name}")
-                print(content[:300])
+            print(
+                f"\nTotal Documentation Files: "
+                f"{len(documentation)}"
+            )
 
         else:
 
             print(
-                "No documentation content found"
+                "No documentation files found"
             )
 
         # Print Kubernetes Findings
